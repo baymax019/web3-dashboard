@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
+import Sidebar from "./sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,46 +15,24 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Abi Web3 Dashboard",
-  description: "Personal Web3 Project Dashboard",
+  description: "Web3 Project Tracker",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="bg-zinc-950 text-white">
-        <div className="flex min-h-screen">
-          {/* Sidebar */}
-          <aside className="w-64 border-r border-zinc-800 p-6">
-            <h1 className="mb-10 text-xl font-bold">
-              Web3 Dashboard
-            </h1>
+      <body className="bg-[#070b12] text-white">
+        <div className="flex min-h-screen bg-[#070b12]">
+          <Sidebar />
 
-            <nav className="space-y-2">
-              <Link
-                href="/"
-                className="block rounded-lg px-4 py-3 hover:bg-zinc-800"
-              >
-                Dashboard
-              </Link>
-
-              <Link
-                href="/library"
-                className="block rounded-lg px-4 py-3 hover:bg-zinc-800"
-              >
-                Project Library
-              </Link>
-            </nav>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1 p-8">
+          <main className="ml-64 min-h-screen flex-1 bg-[#070b12] p-10 text-white">
             {children}
           </main>
         </div>
