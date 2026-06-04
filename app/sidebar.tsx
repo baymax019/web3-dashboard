@@ -1,11 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Library, CircleUserRound } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Home,
+  Library,
+  CircleUserRound,
+  LogOut,
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+
+    router.push("/login");
+    router.refresh();
+  };
 
   const navItem = (href: string, label: string, Icon: any) => (
     <Link
@@ -32,15 +46,27 @@ export default function Sidebar() {
         {navItem("/library", "Project Library", Library)}
       </nav>
 
-      <div className="absolute bottom-6 left-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5">
-          <CircleUserRound size={20} />
+      <div className="absolute bottom-6 left-6 right-6">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5">
+            <CircleUserRound size={20} />
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-white">Abi</p>
+            <p className="text-xs text-zinc-500">
+              Private Dashboard
+            </p>
+          </div>
         </div>
 
-        <div>
-          <p className="text-sm font-semibold text-white">Abi</p>
-          <p className="text-xs text-zinc-500">Web3 Explorer</p>
-        </div>
+        <button
+          onClick={logout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/20"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
     </aside>
   );
