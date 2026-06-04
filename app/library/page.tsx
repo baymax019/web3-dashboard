@@ -2,26 +2,47 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 type Project = {
   id: number;
   name: string;
-  link: string;
-  twitter: string;
-  joinDate: string;
-  category: string;
-  status: string;
+  link: string | null;
+  twitter: string | null;
+  join_date: string | null;
+  category: string | null;
+  status: string | null;
 };
 
 export default function LibraryPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem("projects");
-    if (savedProjects) setProjects(JSON.parse(savedProjects));
+    fetchProjects();
   }, []);
 
-  const getDomain = (url: string) => {
+  const fetchProjects = async () => {
+    setIsLoading(true);
+
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      setIsLoading(false);
+      return;
+    }
+
+    setProjects(data || []);
+    setIsLoading(false);
+  };
+
+  const getDomain = (url: string | null) => {
+    if (!url) return "";
+
     try {
       return new URL(url).hostname;
     } catch {
@@ -29,14 +50,14 @@ export default function LibraryPage() {
     }
   };
 
-  const getLogoUrl = (url: string) => {
+  const getLogoUrl = (url: string | null) => {
     const domain = getDomain(url);
     if (!domain) return "";
 
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
   };
 
-  const getDaysActive = (joinDate: string) => {
+  const getDaysActive = (joinDate: string | null) => {
     if (!joinDate) return 0;
 
     const startDate = new Date(joinDate);
@@ -48,7 +69,7 @@ export default function LibraryPage() {
     );
   };
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: string | null) => {
     switch (status) {
       case "Running":
         return "border-green-500/40 bg-green-500/10 text-green-400";
@@ -64,11 +85,20 @@ export default function LibraryPage() {
   return (
     <div className="min-h-screen bg-[#070b12] text-white">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold tracking-tight">Project Library</h1>
-        <p className="mt-2 text-zinc-400">Browse all your Web3 projects</p>
+        <h1 className="text-4xl font-bold tracking-tight">
+          Project Library
+        </h1>
+
+        <p className="mt-2 text-zinc-400">
+          Browse all your Web3 projects
+        </p>
       </div>
 
-      {projects.length === 0 ? (
+      {isLoading ? (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center">
+          <p className="text-zinc-400">Loading projects...</p>
+        </div>
+      ) : projects.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center">
           <p className="text-zinc-400">
             No projects yet. Add your first project from Dashboard.
@@ -115,14 +145,15 @@ export default function LibraryPage() {
                       project.status
                     )}`}
                   >
-                    {project.status}
+                    {project.status || "Running"}
                   </span>
                 </div>
 
                 <div className="mt-6 border-t border-white/10 pt-4">
                   <p className="text-sm text-zinc-400">Days Active</p>
+
                   <p className="mt-1 text-2xl font-bold text-white">
-                    {getDaysActive(project.joinDate)} days
+                    {getDaysActive(project.join_date)} days
                   </p>
                 </div>
               </Link>

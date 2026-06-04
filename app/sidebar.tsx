@@ -39,7 +39,7 @@ export default function Sidebar() {
 
         <div>
           <p className="text-sm font-semibold text-white">Abi</p>
-          <p className="text-xs text-zinc-500">Web3 Builder</p>
+          <p className="text-xs text-zinc-500">Web3 Explorer</p>
         </div>
       </div>
     </aside>

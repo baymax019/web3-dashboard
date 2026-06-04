@@ -11,66 +11,78 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
+import { supabase } from "../../../lib/supabase";
 
 type Project = {
   id: number;
   name: string;
-  link: string;
-  twitter: string;
-  joinDate: string;
-  category: string;
-  status: string;
+  link: string | null;
+  twitter: string | null;
+  join_date: string | null;
+  category: string | null;
+  status: string | null;
 };
 
 type Note = {
   id: number;
+  project_id: number;
   text: string;
-  createdAt: string;
+  created_at: string;
 };
 
 type Task = {
   id: number;
+  project_id: number;
   text: string;
   completed: boolean;
+  created_at: string;
 };
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = Number(params.id);
 
   const [project, setProject] = useState<Project | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [noteText, setNoteText] = useState("");
   const [taskText, setTaskText] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem("projects");
-    const savedNotes = localStorage.getItem(`notes-${id}`);
-    const savedTasks = localStorage.getItem(`tasks-${id}`);
-
-    if (savedProjects) {
-      const projects: Project[] = JSON.parse(savedProjects);
-      const foundProject = projects.find(
-        (project) => project.id.toString() === id
-      );
-
-      if (foundProject) setProject(foundProject);
-    }
-
-    if (savedNotes) setNotes(JSON.parse(savedNotes));
-    if (savedTasks) setTasks(JSON.parse(savedTasks));
+    fetchProjectData();
   }, [id]);
 
-  useEffect(() => {
-    localStorage.setItem(`notes-${id}`, JSON.stringify(notes));
-  }, [notes, id]);
+  const fetchProjectData = async () => {
+    setIsLoading(true);
 
-  useEffect(() => {
-    localStorage.setItem(`tasks-${id}`, JSON.stringify(tasks));
-  }, [tasks, id]);
+    const { data: projectData } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  const getDomain = (url: string) => {
+    const { data: notesData } = await supabase
+      .from("notes")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false });
+
+    const { data: tasksData } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at", { ascending: true });
+
+    setProject(projectData || null);
+    setNotes(notesData || []);
+    setTasks(tasksData || []);
+    setIsLoading(false);
+  };
+
+  const getDomain = (url: string | null) => {
+    if (!url) return "";
+
     try {
       return new URL(url).hostname;
     } catch {
@@ -78,62 +90,107 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const getLogoUrl = (url: string) => {
+  const getLogoUrl = (url: string | null) => {
     const domain = getDomain(url);
     if (!domain) return "";
 
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
   };
 
-  const addNote = () => {
+  const addNote = async () => {
     if (!noteText.trim()) return;
 
-    setNotes([
-      {
-        id: Date.now(),
+    const { data, error } = await supabase
+      .from("notes")
+      .insert({
+        project_id: id,
         text: noteText,
-        createdAt: new Date().toLocaleDateString(),
-      },
-      ...notes,
-    ]);
+      })
+      .select()
+      .single();
 
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setNotes([data, ...notes]);
     setNoteText("");
   };
 
-  const deleteNote = (noteId: number) => {
+  const deleteNote = async (noteId: number) => {
+    const { error } = await supabase
+      .from("notes")
+      .delete()
+      .eq("id", noteId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setNotes(notes.filter((note) => note.id !== noteId));
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!taskText.trim()) return;
 
-    setTasks([
-      ...tasks,
-      {
-        id: Date.now(),
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        project_id: id,
         text: taskText,
         completed: false,
-      },
-    ]);
+      })
+      .select()
+      .single();
 
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setTasks([...tasks, data]);
     setTaskText("");
   };
 
-  const toggleTask = (taskId: number) => {
+  const toggleTask = async (task: Task) => {
+    const newCompleted = !task.completed;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ completed: newCompleted })
+      .eq("id", task.id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, completed: !task.completed }
-          : task
+      tasks.map((item) =>
+        item.id === task.id
+          ? { ...item, completed: newCompleted }
+          : item
       )
     );
   };
 
-  const deleteTask = (taskId: number) => {
+  const deleteTask = async (taskId: number) => {
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", taskId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setTasks(tasks.filter((task) => task.id !== taskId));
   };
 
-  const getDaysActive = (joinDate: string) => {
+  const getDaysActive = (joinDate: string | null) => {
     if (!joinDate) return 0;
 
     const startDate = new Date(joinDate);
@@ -145,7 +202,7 @@ export default function ProjectDetailPage() {
     );
   };
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: string | null) => {
     switch (status) {
       case "Running":
         return "border-green-500/40 bg-green-500/10 text-green-400";
@@ -165,10 +222,18 @@ export default function ProjectDetailPage() {
       ? 0
       : Math.round((completedTasks / tasks.length) * 100);
 
-  if (!project) {
+  if (isLoading) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center text-zinc-400">
         Loading Project...
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center text-zinc-400">
+        Project not found.
       </div>
     );
   }
@@ -179,6 +244,7 @@ export default function ProjectDetailPage() {
     <div className="min-h-screen bg-[#070b12] text-white">
       <div className="mb-10">
         <p className="text-sm text-zinc-500">Project Detail</p>
+
         <h1 className="mt-2 text-4xl font-bold tracking-tight">
           {project.name}
         </h1>
@@ -216,7 +282,7 @@ export default function ProjectDetailPage() {
                     project.status
                   )}`}
                 >
-                  {project.status}
+                  {project.status || "Running"}
                 </span>
               </div>
             </div>
@@ -230,7 +296,7 @@ export default function ProjectDetailPage() {
               </div>
 
               <h3 className="mt-2 text-3xl font-bold text-blue-400">
-                {getDaysActive(project.joinDate)}
+                {getDaysActive(project.join_date)}
               </h3>
             </div>
 
@@ -256,7 +322,7 @@ export default function ProjectDetailPage() {
           </div>
 
           <p className="mt-3 text-lg font-semibold text-white">
-            {project.joinDate || "-"}
+            {project.join_date || "-"}
           </p>
         </div>
 
@@ -267,7 +333,7 @@ export default function ProjectDetailPage() {
           </div>
 
           <a
-            href={project.link}
+            href={project.link || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 block text-lg font-semibold text-blue-400 hover:text-blue-300"
@@ -283,7 +349,7 @@ export default function ProjectDetailPage() {
           </div>
 
           <a
-            href={project.twitter}
+            href={project.twitter || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 block text-lg font-semibold text-blue-400 hover:text-blue-300"
@@ -298,7 +364,9 @@ export default function ProjectDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="text-green-400" size={24} />
-              <h2 className="text-2xl font-bold text-white">Tasks</h2>
+              <h2 className="text-2xl font-bold text-white">
+                Tasks
+              </h2>
             </div>
 
             <p className="mt-1 text-sm text-zinc-400">
@@ -352,7 +420,7 @@ export default function ProjectDetailPage() {
                 <input
                   type="checkbox"
                   checked={task.completed}
-                  onChange={() => toggleTask(task.id)}
+                  onChange={() => toggleTask(task)}
                 />
 
                 <span
@@ -381,6 +449,7 @@ export default function ProjectDetailPage() {
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
         <div className="flex items-center gap-3">
           <StickyNote className="text-blue-400" size={24} />
+
           <h2 className="text-2xl font-bold text-white">
             Project Notes
           </h2>
@@ -419,7 +488,7 @@ export default function ProjectDetailPage() {
             >
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm text-zinc-500">
-                  {note.createdAt}
+                  {new Date(note.created_at).toLocaleDateString()}
                 </span>
 
                 <button
