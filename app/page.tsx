@@ -9,6 +9,8 @@ import {
   Plus,
   Trash2,
   Info,
+  ExternalLink,
+  CalendarCheck,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
@@ -22,8 +24,24 @@ type Project = {
   status: string | null;
 };
 
+type Attendance = {
+  id: number;
+  project_id: number;
+  check_date: string;
+  checked_at: string;
+};
+
+type AttendanceSummary = {
+  total: number;
+  lastCheckIn: string | null;
+  checkedToday: boolean;
+};
+
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [attendanceMap, setAttendanceMap] = useState<
+    Record<number, AttendanceSummary>
+  >({});
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,6 +55,10 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0];
+  };
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -53,7 +75,78 @@ export default function DashboardPage() {
     }
 
     setProjects(data || []);
+    await fetchAttendances();
     setIsLoading(false);
+  };
+
+  const fetchAttendances = async () => {
+    const { data, error } = await supabase
+      .from("attendances")
+      .select("*")
+      .order("checked_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const today = getToday();
+    const summary: Record<number, AttendanceSummary> = {};
+
+    (data || []).forEach((attendance: Attendance) => {
+      if (!summary[attendance.project_id]) {
+        summary[attendance.project_id] = {
+          total: 0,
+          lastCheckIn: null,
+          checkedToday: false,
+        };
+      }
+
+      summary[attendance.project_id].total += 1;
+
+      if (!summary[attendance.project_id].lastCheckIn) {
+        summary[attendance.project_id].lastCheckIn =
+          attendance.check_date;
+      }
+
+      if (attendance.check_date === today) {
+        summary[attendance.project_id].checkedToday = true;
+      }
+    });
+
+    setAttendanceMap(summary);
+  };
+
+  const recordAttendance = async (projectId: number) => {
+    const today = getToday();
+
+    const { error } = await supabase
+      .from("attendances")
+      .upsert(
+        {
+          project_id: projectId,
+          check_date: today,
+          checked_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "project_id,check_date",
+        }
+      );
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    await fetchAttendances();
+  };
+
+  const openProject = async (project: Project) => {
+    if (!project.link) return;
+
+    window.open(project.link, "_blank", "noopener,noreferrer");
+
+    await recordAttendance(project.id);
   };
 
   const addProject = async () => {
@@ -89,9 +182,7 @@ export default function DashboardPage() {
   };
 
   const deleteProject = async (id: number) => {
-    const confirmDelete = window.confirm(
-      "Delete this project?"
-    );
+    const confirmDelete = window.confirm("Delete this project?");
 
     if (!confirmDelete) return;
 
@@ -105,15 +196,11 @@ export default function DashboardPage() {
       return;
     }
 
-    setProjects(
-      projects.filter((project) => project.id !== id)
-    );
+    setProjects(projects.filter((project) => project.id !== id));
+    await fetchAttendances();
   };
 
-  const updateStatus = async (
-    id: number,
-    status: string
-  ) => {
+  const updateStatus = async (id: number, status: string) => {
     const { error } = await supabase
       .from("projects")
       .update({ status })
@@ -126,9 +213,7 @@ export default function DashboardPage() {
 
     setProjects(
       projects.map((project) =>
-        project.id === id
-          ? { ...project, status }
-          : project
+        project.id === id ? { ...project, status } : project
       )
     );
   };
@@ -173,6 +258,12 @@ export default function DashboardPage() {
       default:
         return "border-zinc-700 bg-zinc-800 text-zinc-400";
     }
+  };
+
+  const attendanceStyle = (checkedToday: boolean) => {
+    return checkedToday
+      ? "border-green-500/40 bg-green-500/10 text-green-400"
+      : "border-zinc-700 bg-zinc-800 text-zinc-400";
   };
 
   const totalProjects = projects.length;
@@ -274,27 +365,21 @@ export default function DashboardPage() {
             <input
               placeholder="Project Name"
               value={projectName}
-              onChange={(e) =>
-                setProjectName(e.target.value)
-              }
+              onChange={(e) => setProjectName(e.target.value)}
               className="rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
             />
 
             <input
               placeholder="Project Link"
               value={projectLink}
-              onChange={(e) =>
-                setProjectLink(e.target.value)
-              }
+              onChange={(e) => setProjectLink(e.target.value)}
               className="rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
             />
 
             <input
               placeholder="Twitter / X Link"
               value={projectTwitter}
-              onChange={(e) =>
-                setProjectTwitter(e.target.value)
-              }
+              onChange={(e) => setProjectTwitter(e.target.value)}
               className="rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
             />
 
@@ -308,17 +393,13 @@ export default function DashboardPage() {
             <input
               placeholder="Category"
               value={projectCategory}
-              onChange={(e) =>
-                setProjectCategory(e.target.value)
-              }
+              onChange={(e) => setProjectCategory(e.target.value)}
               className="rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
             />
 
             <select
               value={projectStatus}
-              onChange={(e) =>
-                setProjectStatus(e.target.value)
-              }
+              onChange={(e) => setProjectStatus(e.target.value)}
               className="rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none focus:border-blue-500"
             >
               <option>Running</option>
@@ -362,6 +443,9 @@ export default function DashboardPage() {
                 Days Active
               </th>
               <th className="p-5 text-left text-sm text-zinc-400">
+                Attendance
+              </th>
+              <th className="p-5 text-left text-sm text-zinc-400">
                 Actions
               </th>
             </tr>
@@ -371,7 +455,7 @@ export default function DashboardPage() {
             {isLoading && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-10 text-center text-zinc-500"
                 >
                   Loading projects...
@@ -382,7 +466,7 @@ export default function DashboardPage() {
             {!isLoading && projects.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-10 text-center text-zinc-500"
                 >
                   No projects yet. Add your first Web3 project.
@@ -392,6 +476,9 @@ export default function DashboardPage() {
 
             {projects.map((project) => {
               const logoUrl = getLogoUrl(project.link);
+              const attendance = attendanceMap[project.id];
+              const checkedToday =
+                attendance?.checkedToday || false;
 
               return (
                 <tr
@@ -408,9 +495,7 @@ export default function DashboardPage() {
                         />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 font-bold text-blue-400">
-                          {project.name
-                            .charAt(0)
-                            .toUpperCase()}
+                          {project.name.charAt(0).toUpperCase()}
                         </div>
                       )}
 
@@ -428,10 +513,7 @@ export default function DashboardPage() {
                     <select
                       value={project.status || "Running"}
                       onChange={(e) =>
-                        updateStatus(
-                          project.id,
-                          e.target.value
-                        )
+                        updateStatus(project.id, e.target.value)
                       }
                       className={`rounded-xl border px-4 py-2 outline-none ${statusStyle(
                         project.status
@@ -448,13 +530,41 @@ export default function DashboardPage() {
                   </td>
 
                   <td className="p-5">
-                    <button
-                      onClick={() => deleteProject(project.id)}
-                      className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-red-400 hover:bg-red-500/20"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <span
+                        className={`inline-flex w-fit items-center gap-2 rounded-xl border px-3 py-2 text-sm ${attendanceStyle(
+                          checkedToday
+                        )}`}
+                      >
+                        <CalendarCheck size={15} />
+                        {checkedToday ? "Checked Today" : "Not Today"}
+                      </span>
+
+                      <span className="text-xs text-zinc-500">
+                        Total: {attendance?.total || 0}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="p-5">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => openProject(project)}
+                        disabled={!project.link}
+                        className="flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-blue-400 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ExternalLink size={16} />
+                        Open
+                      </button>
+
+                      <button
+                        onClick={() => deleteProject(project.id)}
+                        className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-red-400 hover:bg-red-500/20"
+                      >
+                        <Trash2 size={16} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -466,7 +576,8 @@ export default function DashboardPage() {
       <div className="mt-10 flex items-center gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5 text-sm text-blue-200">
         <Info size={18} />
         <span>
-          This dashboard is now connected to Supabase.
+          Click Open to visit a project and automatically record today&apos;s
+          attendance.
         </span>
       </div>
     </div>

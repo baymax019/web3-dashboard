@@ -10,6 +10,9 @@ import {
   StickyNote,
   Trash2,
   Plus,
+  CalendarCheck,
+  FileText,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 
@@ -21,6 +24,7 @@ type Project = {
   join_date: string | null;
   category: string | null;
   status: string | null;
+  description: string | null;
 };
 
 type Note = {
@@ -38,6 +42,13 @@ type Task = {
   created_at: string;
 };
 
+type Attendance = {
+  id: number;
+  project_id: number;
+  check_date: string;
+  checked_at: string;
+};
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const id = Number(params.id);
@@ -45,13 +56,20 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [noteText, setNoteText] = useState("");
   const [taskText, setTaskText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingDescription, setIsGeneratingDescription] =
+    useState(false);
 
   useEffect(() => {
     fetchProjectData();
   }, [id]);
+
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0];
+  };
 
   const fetchProjectData = async () => {
     setIsLoading(true);
@@ -74,10 +92,102 @@ export default function ProjectDetailPage() {
       .eq("project_id", id)
       .order("created_at", { ascending: true });
 
+    const { data: attendanceData } = await supabase
+      .from("attendances")
+      .select("*")
+      .eq("project_id", id)
+      .order("checked_at", { ascending: false });
+
     setProject(projectData || null);
     setNotes(notesData || []);
     setTasks(tasksData || []);
+    setAttendances(attendanceData || []);
     setIsLoading(false);
+  };
+
+  const recordAttendance = async () => {
+    const today = getToday();
+
+    const { error } = await supabase
+      .from("attendances")
+      .upsert(
+        {
+          project_id: id,
+          check_date: today,
+          checked_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "project_id,check_date",
+        }
+      );
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    await fetchProjectData();
+  };
+
+  const openProject = async () => {
+    if (!project?.link) return;
+
+    window.open(project.link, "_blank", "noopener,noreferrer");
+
+    await recordAttendance();
+  };
+
+  const generateDescription = async () => {
+    if (!project?.link || !project) return;
+
+    setIsGeneratingDescription(true);
+
+    try {
+      const response = await fetch("/api/fetch-description", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: project.link,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.description) {
+        alert(
+          result.error ||
+            "No description found from this website metadata."
+        );
+        setIsGeneratingDescription(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          description: result.description,
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to save description to Supabase.");
+        setIsGeneratingDescription(false);
+        return;
+      }
+
+      setProject({
+        ...project,
+        description: result.description,
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate description.");
+    }
+
+    setIsGeneratingDescription(false);
   };
 
   const getDomain = (url: string | null) => {
@@ -222,6 +332,15 @@ export default function ProjectDetailPage() {
       ? 0
       : Math.round((completedTasks / tasks.length) * 100);
 
+  const today = getToday();
+
+  const checkedToday = attendances.some(
+    (attendance) => attendance.check_date === today
+  );
+
+  const lastCheckIn =
+    attendances.length > 0 ? attendances[0].check_date : null;
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center text-zinc-400">
@@ -242,79 +361,70 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#070b12] text-white">
-      <div className="mb-10">
-        <p className="text-sm text-zinc-500">Project Detail</p>
-
-        <h1 className="mt-2 text-4xl font-bold tracking-tight">
-          {project.name}
-        </h1>
-      </div>
-
       <div className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-6">
-            <div className="flex h-28 w-28 items-center justify-center rounded-3xl border border-white/10 bg-[#080c13]">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-[#080c13]">
               {logoUrl ? (
                 <img
                   src={logoUrl}
                   alt={project.name}
-                  className="h-20 w-20 rounded-2xl object-cover"
+                  className="h-16 w-16 rounded-2xl object-cover"
                 />
               ) : (
-                <span className="text-5xl font-bold text-blue-400">
+                <span className="text-4xl font-bold text-blue-400">
                   {project.name.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
 
             <div>
-              <h2 className="text-4xl font-bold text-white">
-                {project.name}
-              </h2>
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
+                  Project Detail
+                </span>
 
-              <p className="mt-2 text-zinc-400">
-                {project.category || "Uncategorized"}
-              </p>
-
-              <div className="mt-4">
                 <span
-                  className={`rounded-full border px-4 py-2 text-sm font-medium ${getStatusStyle(
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusStyle(
                     project.status
                   )}`}
                 >
                   {project.status || "Running"}
                 </span>
+
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                    checkedToday
+                      ? "border-green-500/40 bg-green-500/10 text-green-400"
+                      : "border-zinc-700 bg-zinc-800 text-zinc-400"
+                  }`}
+                >
+                  {checkedToday ? "Checked Today" : "Not Checked Today"}
+                </span>
               </div>
+
+              <h1 className="text-4xl font-bold tracking-tight text-white">
+                {project.name}
+              </h1>
+
+              <p className="mt-2 text-zinc-400">
+                {project.category || "Uncategorized"}
+              </p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:w-[420px]">
-            <div className="rounded-2xl border border-white/10 bg-[#080c13] p-5">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-zinc-500">Days Active</p>
-                <Activity size={20} className="text-blue-400" />
-              </div>
-
-              <h3 className="mt-2 text-3xl font-bold text-blue-400">
-                {getDaysActive(project.join_date)}
-              </h3>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-[#080c13] p-5">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-zinc-500">Tasks Done</p>
-                <CheckCircle2 size={20} className="text-green-400" />
-              </div>
-
-              <h3 className="mt-2 text-3xl font-bold text-green-400">
-                {completedTasks}/{tasks.length}
-              </h3>
-            </div>
-          </div>
+          <button
+            onClick={openProject}
+            disabled={!project.link}
+            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-4 font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ExternalLink size={18} />
+            Open Project & Check-in
+          </button>
         </div>
       </div>
 
-      <div className="mb-8 grid gap-6 lg:grid-cols-3">
+      <div className="mb-8 grid gap-6 lg:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
           <div className="flex items-center gap-2 text-zinc-500">
             <CalendarDays size={18} />
@@ -328,18 +438,71 @@ export default function ProjectDetailPage() {
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
           <div className="flex items-center gap-2 text-zinc-500">
-            <ExternalLink size={18} />
-            <p className="text-sm">Website</p>
+            <Activity size={18} />
+            <p className="text-sm">Days Active</p>
           </div>
 
-          <a
-            href={project.link || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 block text-lg font-semibold text-blue-400 hover:text-blue-300"
-          >
-            Open Website
-          </a>
+          <p className="mt-3 text-lg font-semibold text-blue-400">
+            {getDaysActive(project.join_date)} days
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <CalendarCheck size={18} />
+            <p className="text-sm">Total Check-ins</p>
+          </div>
+
+          <p className="mt-3 text-lg font-semibold text-green-400">
+            {attendances.length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <CalendarCheck size={18} />
+            <p className="text-sm">Last Check-in</p>
+          </div>
+
+          <p className="mt-3 text-lg font-semibold text-white">
+            {lastCheckIn || "-"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-zinc-500">
+              <FileText size={18} />
+              <p className="text-sm">Project Description</p>
+            </div>
+
+            <button
+              onClick={generateDescription}
+              disabled={!project.link || isGeneratingDescription}
+              className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw
+                size={14}
+                className={
+                  isGeneratingDescription ? "animate-spin" : ""
+                }
+              />
+              {isGeneratingDescription ? "Generating..." : "Generate"}
+            </button>
+          </div>
+
+          {project.description ? (
+            <p className="leading-relaxed text-zinc-200">
+              {project.description}
+            </p>
+          ) : (
+            <p className="leading-relaxed text-zinc-500">
+              No description yet. Click Generate to fetch description from
+              the project website metadata.
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
