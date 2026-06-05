@@ -343,7 +343,7 @@ export default function ProjectDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center text-zinc-400">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center text-zinc-400">
         Loading Project...
       </div>
     );
@@ -351,7 +351,7 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center text-zinc-400">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center text-zinc-400">
         Project not found.
       </div>
     );
@@ -361,25 +361,25 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#070b12] text-white">
-      <div className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-8">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-[#080c13]">
+      <div className="mb-6 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:mb-8 sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-[#080c13] sm:h-24 sm:w-24">
               {logoUrl ? (
                 <img
                   src={logoUrl}
                   alt={project.name}
-                  className="h-16 w-16 rounded-2xl object-cover"
+                  className="h-14 w-14 rounded-2xl object-cover sm:h-16 sm:w-16"
                 />
               ) : (
-                <span className="text-4xl font-bold text-blue-400">
+                <span className="text-3xl font-bold text-blue-400 sm:text-4xl">
                   {project.name.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
 
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-3">
+            <div className="min-w-0">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
                   Project Detail
                 </span>
@@ -403,11 +403,11 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
 
-              <h1 className="text-4xl font-bold tracking-tight text-white">
+              <h1 className="truncate text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 {project.name}
               </h1>
 
-              <p className="mt-2 text-zinc-400">
+              <p className="mt-2 text-sm text-zinc-400 sm:text-base">
                 {project.category || "Uncategorized"}
               </p>
             </div>
@@ -416,7 +416,7 @@ export default function ProjectDetailPage() {
           <button
             onClick={openProject}
             disabled={!project.link}
-            className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-4 font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-4 font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 lg:w-auto"
           >
             <ExternalLink size={18} />
             Open Project & Check-in
@@ -424,55 +424,55 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <div className="mb-8 grid gap-6 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:gap-6 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-6">
           <div className="flex items-center gap-2 text-zinc-500">
-            <CalendarDays size={18} />
-            <p className="text-sm">Join Date</p>
+            <CalendarDays size={17} />
+            <p className="text-xs sm:text-sm">Join Date</p>
           </div>
 
-          <p className="mt-3 text-lg font-semibold text-white">
+          <p className="mt-3 text-sm font-semibold text-white sm:text-lg">
             {project.join_date || "-"}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-6">
           <div className="flex items-center gap-2 text-zinc-500">
-            <Activity size={18} />
-            <p className="text-sm">Days Active</p>
+            <Activity size={17} />
+            <p className="text-xs sm:text-sm">Days Active</p>
           </div>
 
-          <p className="mt-3 text-lg font-semibold text-blue-400">
+          <p className="mt-3 text-sm font-semibold text-blue-400 sm:text-lg">
             {getDaysActive(project.join_date)} days
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-6">
           <div className="flex items-center gap-2 text-zinc-500">
-            <CalendarCheck size={18} />
-            <p className="text-sm">Total Check-ins</p>
+            <CalendarCheck size={17} />
+            <p className="text-xs sm:text-sm">Check-ins</p>
           </div>
 
-          <p className="mt-3 text-lg font-semibold text-green-400">
+          <p className="mt-3 text-sm font-semibold text-green-400 sm:text-lg">
             {attendances.length}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-6">
           <div className="flex items-center gap-2 text-zinc-500">
-            <CalendarCheck size={18} />
-            <p className="text-sm">Last Check-in</p>
+            <CalendarCheck size={17} />
+            <p className="text-xs sm:text-sm">Last Check-in</p>
           </div>
 
-          <p className="mt-3 text-lg font-semibold text-white">
+          <p className="mt-3 text-sm font-semibold text-white sm:text-lg">
             {lastCheckIn || "-"}
           </p>
         </div>
       </div>
 
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-6 grid gap-4 sm:mb-8 sm:gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-zinc-500">
               <FileText size={18} />
               <p className="text-sm">Project Description</p>
@@ -481,7 +481,7 @@ export default function ProjectDetailPage() {
             <button
               onClick={generateDescription}
               disabled={!project.link || isGeneratingDescription}
-              className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               <RefreshCw
                 size={14}
@@ -489,23 +489,27 @@ export default function ProjectDetailPage() {
                   isGeneratingDescription ? "animate-spin" : ""
                 }
               />
-              {isGeneratingDescription ? "Generating..." : "Generate"}
+              {isGeneratingDescription
+                ? "Generating..."
+                : project.description
+                ? "Refresh"
+                : "Generate"}
             </button>
           </div>
 
           {project.description ? (
-            <p className="leading-relaxed text-zinc-200">
+            <p className="text-sm leading-relaxed text-zinc-200 sm:text-base">
               {project.description}
             </p>
           ) : (
-            <p className="leading-relaxed text-zinc-500">
+            <p className="text-sm leading-relaxed text-zinc-500 sm:text-base">
               No description yet. Click Generate to fetch description from
-              the project website metadata.
+              the project website.
             </p>
           )}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
           <div className="flex items-center gap-2 text-zinc-500">
             <ExternalLink size={18} />
             <p className="text-sm">Twitter / X</p>
@@ -515,15 +519,15 @@ export default function ProjectDetailPage() {
             href={project.twitter || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 block text-lg font-semibold text-blue-400 hover:text-blue-300"
+            className="mt-3 block text-base font-semibold text-blue-400 hover:text-blue-300 sm:text-lg"
           >
             Open Profile
           </a>
         </div>
       </div>
 
-      <div className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-8">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:mb-8 sm:p-8">
+        <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="text-green-400" size={24} />
@@ -549,18 +553,18 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-        <div className="mb-6 flex gap-3">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             placeholder="Add task..."
             value={taskText}
             onChange={(e) => setTaskText(e.target.value)}
-            className="flex-1 rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#080c13] p-4 text-white outline-none placeholder:text-zinc-500 focus:border-blue-500"
           />
 
           <button
             onClick={addTask}
-            className="flex items-center gap-2 rounded-xl bg-green-600 px-5 font-semibold text-white hover:bg-green-500"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-4 font-semibold text-white hover:bg-green-500 sm:w-auto"
           >
             <Plus size={18} />
             Add
@@ -577,21 +581,22 @@ export default function ProjectDetailPage() {
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-center justify-between rounded-xl border border-white/10 bg-[#080c13] p-4"
+              className="flex flex-col gap-4 rounded-xl border border-white/10 bg-[#080c13] p-4 sm:flex-row sm:items-center sm:justify-between"
             >
-              <label className="flex cursor-pointer items-center gap-3">
+              <label className="flex cursor-pointer items-start gap-3 sm:items-center">
                 <input
                   type="checkbox"
                   checked={task.completed}
                   onChange={() => toggleTask(task)}
+                  className="mt-1 sm:mt-0"
                 />
 
                 <span
-                  className={
+                  className={`text-sm sm:text-base ${
                     task.completed
                       ? "text-zinc-500 line-through"
                       : "text-white"
-                  }
+                  }`}
                 >
                   {task.text}
                 </span>
@@ -599,7 +604,7 @@ export default function ProjectDetailPage() {
 
               <button
                 onClick={() => deleteTask(task.id)}
-                className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300"
+                className="flex w-fit items-center gap-2 text-sm text-red-400 hover:text-red-300"
               >
                 <Trash2 size={16} />
                 Delete
@@ -609,7 +614,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-8">
         <div className="flex items-center gap-3">
           <StickyNote className="text-blue-400" size={24} />
 
@@ -631,7 +636,7 @@ export default function ProjectDetailPage() {
 
         <button
           onClick={addNote}
-          className="mt-4 flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-500"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-500 sm:w-auto"
         >
           <Plus size={18} />
           Add Note
@@ -649,21 +654,21 @@ export default function ProjectDetailPage() {
               key={note.id}
               className="rounded-xl border border-white/10 bg-[#080c13] p-5"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm text-zinc-500">
                   {new Date(note.created_at).toLocaleDateString()}
                 </span>
 
                 <button
                   onClick={() => deleteNote(note.id)}
-                  className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300"
+                  className="flex w-fit items-center gap-2 text-sm text-red-400 hover:text-red-300"
                 >
                   <Trash2 size={16} />
                   Delete
                 </button>
               </div>
 
-              <p className="whitespace-pre-wrap text-zinc-200">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-200 sm:text-base">
                 {note.text}
               </p>
             </div>

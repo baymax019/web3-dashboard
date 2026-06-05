@@ -310,43 +310,43 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#070b12] text-white">
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Dashboard
           </h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-400 sm:text-base">
             Manage your Web3 projects
           </p>
         </div>
 
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-black hover:bg-zinc-200"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-black hover:bg-zinc-200 sm:w-auto"
         >
           <Plus size={18} />
           Add Project
         </button>
       </div>
 
-      <div className="mb-10 grid gap-4 md:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon;
 
           return (
             <div
               key={card.label}
-              className={`rounded-2xl border ${card.border} bg-white/[0.04] p-6`}
+              className={`rounded-2xl border ${card.border} bg-white/[0.04] p-4 sm:p-6`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm text-zinc-400">
+                <p className="text-xs text-zinc-400 sm:text-sm">
                   {card.label}
                 </p>
-                <Icon className={card.color} size={24} />
+                <Icon className={card.color} size={22} />
               </div>
 
               <h2
-                className={`mt-4 text-4xl font-bold ${card.color}`}
+                className={`mt-4 text-3xl font-bold sm:text-4xl ${card.color}`}
               >
                 {card.value}
               </h2>
@@ -356,12 +356,12 @@ export default function DashboardPage() {
       </div>
 
       {showForm && (
-        <div className="mb-10 rounded-2xl border border-white/10 bg-white/[0.04] p-8">
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold">
             Add Project
           </h2>
 
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             <input
               placeholder="Project Name"
               value={projectName}
@@ -408,7 +408,7 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <button
               onClick={addProject}
               className="rounded-xl bg-green-600 px-5 py-3 font-semibold hover:bg-green-500"
@@ -426,7 +426,119 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+      {/* Mobile Project Cards */}
+      <div className="space-y-4 md:hidden">
+        {isLoading && (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center text-zinc-500">
+            Loading projects...
+          </div>
+        )}
+
+        {!isLoading && projects.length === 0 && (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center text-zinc-500">
+            No projects yet. Add your first Web3 project.
+          </div>
+        )}
+
+        {projects.map((project) => {
+          const logoUrl = getLogoUrl(project.link);
+          const attendance = attendanceMap[project.id];
+          const checkedToday = attendance?.checkedToday || false;
+
+          return (
+            <div
+              key={project.id}
+              className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
+            >
+              <div className="mb-5 flex items-start gap-4">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={project.name}
+                    className="h-12 w-12 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 font-bold text-blue-400">
+                    {project.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-lg font-bold text-white">
+                    {project.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {project.category || "-"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-5 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-white/10 bg-[#080c13] p-3">
+                  <p className="text-xs text-zinc-500">Days</p>
+                  <p className="mt-1 font-semibold text-white">
+                    {getDaysActive(project.join_date)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-[#080c13] p-3">
+                  <p className="text-xs text-zinc-500">Check-ins</p>
+                  <p className="mt-1 font-semibold text-green-400">
+                    {attendance?.total || 0}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-5 flex flex-wrap gap-2">
+                <select
+                  value={project.status || "Running"}
+                  onChange={(e) =>
+                    updateStatus(project.id, e.target.value)
+                  }
+                  className={`rounded-xl border px-3 py-2 text-sm outline-none ${statusStyle(
+                    project.status
+                  )}`}
+                >
+                  <option>Running</option>
+                  <option>Pending</option>
+                  <option>Shutdown</option>
+                </select>
+
+                <span
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${attendanceStyle(
+                    checkedToday
+                  )}`}
+                >
+                  <CalendarCheck size={15} />
+                  {checkedToday ? "Checked" : "Not Today"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => openProject(project)}
+                  disabled={!project.link}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm font-semibold text-blue-400 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ExternalLink size={16} />
+                  Open
+                </button>
+
+                <button
+                  onClick={() => deleteProject(project.id)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/20"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] md:block">
         <table className="w-full">
           <thead className="border-b border-white/10 bg-white/[0.04]">
             <tr>
@@ -573,8 +685,8 @@ export default function DashboardPage() {
         </table>
       </div>
 
-      <div className="mt-10 flex items-center gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5 text-sm text-blue-200">
-        <Info size={18} />
+      <div className="mt-8 flex items-start gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200 sm:p-5">
+        <Info size={18} className="mt-0.5 shrink-0" />
         <span>
           Click Open to visit a project and automatically record today&apos;s
           attendance.

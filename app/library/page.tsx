@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CalendarDays, Activity, ArrowUpRight } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type Project = {
@@ -84,28 +85,28 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-[#070b12] text-white">
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold tracking-tight">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Project Library
         </h1>
 
-        <p className="mt-2 text-zinc-400">
+        <p className="mt-2 text-sm text-zinc-400 sm:text-base">
           Browse all your Web3 projects
         </p>
       </div>
 
       {isLoading ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center">
           <p className="text-zinc-400">Loading projects...</p>
         </div>
       ) : projects.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-10 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center">
           <p className="text-zinc-400">
             No projects yet. Add your first project from Dashboard.
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => {
             const logoUrl = getLogoUrl(project.link);
 
@@ -113,33 +114,42 @@ export default function LibraryPage() {
               <Link
                 key={project.id}
                 href={`/project/${project.id}`}
-                className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:-translate-y-1 hover:border-blue-500/50 hover:bg-white/[0.07]"
+                className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:-translate-y-1 hover:border-blue-500/50 hover:bg-white/[0.07] sm:p-6"
               >
-                <div className="mb-6 flex h-32 items-center justify-center rounded-2xl border border-white/10 bg-[#080c13]">
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt={project.name}
-                      className="h-20 w-20 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <span className="text-5xl font-bold text-blue-400">
-                      {project.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#080c13] sm:h-20 sm:w-20">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt={project.name}
+                          className="h-11 w-11 rounded-xl object-cover sm:h-14 sm:w-14"
+                        />
+                      ) : (
+                        <span className="text-3xl font-bold text-blue-400">
+                          {project.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
 
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">
-                      {project.name}
-                    </h2>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-xl font-bold text-white">
+                        {project.name}
+                      </h2>
 
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {project.category || "Uncategorized"}
-                    </p>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        {project.category || "Uncategorized"}
+                      </p>
+                    </div>
                   </div>
 
+                  <ArrowUpRight
+                    size={20}
+                    className="shrink-0 text-zinc-500 transition group-hover:text-blue-400"
+                  />
+                </div>
+
+                <div className="mb-5">
                   <span
                     className={`rounded-full border px-3 py-1 text-xs ${getStatusStyle(
                       project.status
@@ -149,12 +159,28 @@ export default function LibraryPage() {
                   </span>
                 </div>
 
-                <div className="mt-6 border-t border-white/10 pt-4">
-                  <p className="text-sm text-zinc-400">Days Active</p>
+                <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
+                  <div className="rounded-xl border border-white/10 bg-[#080c13] p-3">
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <CalendarDays size={15} />
+                      <p className="text-xs">Join Date</p>
+                    </div>
 
-                  <p className="mt-1 text-2xl font-bold text-white">
-                    {getDaysActive(project.join_date)} days
-                  </p>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {project.join_date || "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-[#080c13] p-3">
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <Activity size={15} />
+                      <p className="text-xs">Active</p>
+                    </div>
+
+                    <p className="mt-2 text-sm font-semibold text-blue-400">
+                      {getDaysActive(project.join_date)} days
+                    </p>
+                  </div>
                 </div>
               </Link>
             );

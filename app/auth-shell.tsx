@@ -71,7 +71,7 @@ export default function AuthShell({
 
   if (isChecking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070b12] text-zinc-400">
+      <div className="flex min-h-screen items-center justify-center bg-[#070b12] px-6 text-center text-zinc-400">
         Checking session...
       </div>
     );
@@ -86,10 +86,10 @@ export default function AuthShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#070b12]">
+    <div className="min-h-screen bg-[#070b12]">
       <Sidebar />
 
-      <main className="ml-64 min-h-screen flex-1 bg-[#070b12] p-10 text-white">
+      <main className="min-h-screen bg-[#070b12] px-4 py-6 pb-28 text-white sm:px-6 md:ml-64 md:p-10">
         {children}
       </main>
     </div>
