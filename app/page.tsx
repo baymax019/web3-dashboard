@@ -35,7 +35,7 @@ export default function PublicDashboardPage() {
     setIsLoading(true);
 
     const { data, error } = await supabase
-      .from("projects")
+      .from("public_projects")
       .select("*")
       .order("created_at", { ascending: false });
 
