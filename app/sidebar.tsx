@@ -21,33 +21,45 @@ export default function Sidebar() {
     router.refresh();
   };
 
-  const navItem = (href: string, label: string, Icon: any) => (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
-        pathname === href
-          ? "bg-white/10 text-white"
-          : "text-zinc-400 hover:bg-white/10 hover:text-white"
-      }`}
-    >
-      <Icon size={18} />
-      {label}
-    </Link>
-  );
+  const navItem = (href: string, label: string, Icon: any) => {
+    const isActive =
+      pathname === href ||
+      (href !== "/admin" && pathname.startsWith(href));
 
-  const mobileNavItem = (href: string, label: string, Icon: any) => (
-    <Link
-      href={href}
-      className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-3 text-xs font-medium transition ${
-        pathname === href
-          ? "bg-white/10 text-white"
-          : "text-zinc-500"
-      }`}
-    >
-      <Icon size={20} />
-      {label}
-    </Link>
-  );
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
+          isActive
+            ? "bg-white/10 text-white"
+            : "text-zinc-400 hover:bg-white/10 hover:text-white"
+        }`}
+      >
+        <Icon size={18} />
+        {label}
+      </Link>
+    );
+  };
+
+  const mobileNavItem = (href: string, label: string, Icon: any) => {
+    const isActive =
+      pathname === href ||
+      (href !== "/admin" && pathname.startsWith(href));
+
+    return (
+      <Link
+        href={href}
+        className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-3 text-xs font-medium transition ${
+          isActive
+            ? "bg-white/10 text-white"
+            : "text-zinc-500"
+        }`}
+      >
+        <Icon size={20} />
+        {label}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -57,8 +69,8 @@ export default function Sidebar() {
         </h1>
 
         <nav className="space-y-3">
-          {navItem("/", "Dashboard", Home)}
-          {navItem("/library", "Project Library", Library)}
+          {navItem("/admin", "Dashboard", Home)}
+          {navItem("/admin/library", "Project Library", Library)}
         </nav>
 
         <div className="absolute bottom-6 left-6 right-6">
@@ -87,8 +99,8 @@ export default function Sidebar() {
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#080c13]/95 px-3 py-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md items-center gap-2">
-          {mobileNavItem("/", "Dashboard", Home)}
-          {mobileNavItem("/library", "Library", Library)}
+          {mobileNavItem("/admin", "Dashboard", Home)}
+          {mobileNavItem("/admin/library", "Library", Library)}
 
           <button
             onClick={logout}

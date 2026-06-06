@@ -17,6 +17,7 @@ export default function AuthShell({
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const isLoginPage = pathname === "/login";
+  const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
   useEffect(() => {
     const checkSession = async () => {
@@ -28,17 +29,26 @@ export default function AuthShell({
 
       const hasSession = !!data.session;
 
-      if (!hasSession && !isLoginPage) {
-        setIsLoggedIn(false);
+      // PUBLIC pages are always view-only and do NOT require login
+      if (!isAdminPage && !isLoginPage) {
+        setIsLoggedIn(hasSession);
         setIsChecking(false);
-        router.push("/login");
         return;
       }
 
-      if (hasSession && isLoginPage) {
+      // LOGIN page: if already logged in, go to admin
+      if (isLoginPage && hasSession) {
         setIsLoggedIn(true);
         setIsChecking(false);
-        router.push("/");
+        router.push("/admin");
+        return;
+      }
+
+      // ADMIN pages: require login
+      if (isAdminPage && !hasSession) {
+        setIsLoggedIn(false);
+        setIsChecking(false);
+        router.push("/login");
         return;
       }
 
@@ -55,19 +65,19 @@ export default function AuthShell({
 
       setIsLoggedIn(hasSession);
 
-      if (!hasSession && pathname !== "/login") {
+      if (!hasSession && isAdminPage) {
         router.push("/login");
       }
 
-      if (hasSession && pathname === "/login") {
-        router.push("/");
+      if (hasSession && isLoginPage) {
+        router.push("/admin");
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [pathname, router, isLoginPage]);
+  }, [pathname, router, isAdminPage, isLoginPage]);
 
   if (isChecking) {
     return (
@@ -77,10 +87,12 @@ export default function AuthShell({
     );
   }
 
-  if (isLoginPage) {
+  // Public pages: no sidebar, no login required
+  if (!isAdminPage) {
     return <>{children}</>;
   }
 
+  // Admin pages: must be logged in
   if (!isLoggedIn) {
     return null;
   }
